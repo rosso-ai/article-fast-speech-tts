@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>早口なTTSを安定して作る（レビュー用）</title>
+<style>
+:root{--bg:#f7f7f5;--fg:#1a1a1a;--mut:#7a7a75;--line:#e3e3df;--card:#fff;
+--acc:#b4532a}
+@media(prefers-color-scheme:dark){:root{--bg:#16161a;--fg:#e8e8e4;--mut:#9a9a94;
+--line:#2e2e34;--card:#1e1e23;--acc:#e08a5e}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-size:16px;line-height:1.9;
+font-family:-apple-system,"Segoe UI","Hiragino Sans","Noto Sans JP",sans-serif}
+.note{max-width:620px;margin:0 auto;background:var(--card);padding:40px 0 120px}
+.bar{max-width:620px;margin:0 auto 22px;background:#fff8e6;border:1px solid #e8d9a8;
+border-radius:8px;padding:13px 17px;font-size:13.5px;line-height:1.8;color:#4a3f1e}
+@media(prefers-color-scheme:dark){.bar{background:#2a2618;border-color:#4a4228;color:#e8dcb8}}
+h1{font-size:28px;line-height:1.5;margin:0 0 30px}
+h2{font-size:21px;margin:52px 0 12px}
+h3{font-size:17px;margin:34px 0 10px}
+p{margin:22px 0}
+img{width:100%;display:block;margin:26px 0 6px;border:1px solid var(--line)}
+.cap{color:var(--mut);font-size:13px;margin:0 0 26px;line-height:1.7}
+blockquote{margin:24px 0;padding:12px 0 12px 18px;border-left:3px solid var(--line);
+color:var(--mut)}
+blockquote p{margin:2px 0}
+pre{background:var(--bg);border-radius:5px;padding:14px 16px;overflow-x:auto;
+font-size:13px;line-height:1.7;margin:24px 0;
+font-family:ui-monospace,Consolas,monospace}
+code{background:var(--bg);padding:1px 5px;border-radius:3px;font-size:14px}
+ul,ol{margin:22px 0;padding-left:1.5em}li{margin:8px 0}
+hr{border:0;border-top:1px solid var(--line);margin:34px 0}
+.au{border:1px dashed var(--line);border-radius:8px;padding:14px 16px;margin:26px 0;
+background:var(--bg)}
+.au .t{font-weight:600;font-size:14px;color:var(--acc)}
+.au .s{font-size:12.5px;color:var(--mut);margin-top:4px}
+a{color:#2a6b7c}
+</style>
+</head>
+<body>
+<div class="bar"><b>これはレビュー用のページです。</b>note に貼ったときの見え方を620px幅で再現しています。気づいた点があれば教えてください。</div>
+
+<div class="note">
+<h1>早口なTTSを安定して作る</h1>
+<p>倍率だけでは足りなかった</p>
+<h2>速度指定と語句の脱落</h2>
+<p><a href="https://huggingface.co/Aratako/Irodori-TTS-v4-Small">Irodori-TTS</a> には話す速さの指定があります。このモデルはテキストから「この文は何フレームぶんの長さになるか」を予測する部分を持っていて、<b>duration_scale</b> はその予測値に掛ける倍率です。0.667 を渡すと、予測された長さのおよそ3分の2に収まるように生成されます。できあがった音声を再生側で速くするのとは違い、声の高さは変わりません。</p>
+<p>30モーラの原稿に <b>duration_scale=0.667</b> を渡すと、指定どおり1.5倍の速さになりました。</p>
+<blockquote>
+  <p><b>モーラ</b>は日本語の音の長さの単位で、「きょ・う・と」なら3モーラです（拗音は前の字と合わせて1つ）。</p>
+</blockquote>
+<div class="au">
+  <div class="t">♪ 通常の速さ</div>
+  <audio controls preload="none" src="audio/001_short_base.mp3"></audio>
+</div>
+<div class="au">
+  <div class="t">♪ 1.5倍</div>
+  <audio controls preload="none" src="audio/002_short_x15.mp3"></audio>
+</div>
+<blockquote>
+  <p><b>原稿</b><br>新幹線が混んでいて、座れたのは名古屋を過ぎてからでした。（30モーラ）</p>
+</blockquote>
+<p>しかし、生成させる文章が長くなると事情が変わってきます。129モーラの原稿に同じ <b>duration_scale=0.667</b> を渡すと、読まれない語句が出ました。4文ぶんの原稿をまとめて1回で合成しています。</p>
+<div class="au">
+  <div class="t">♪ 通常の速さ</div>
+  <audio controls preload="none" src="audio/003_long_base.mp3"></audio>
+</div>
+<div class="au">
+  <div class="t">♪ 1.5倍</div>
+  <audio controls preload="none" src="audio/004_long_x15.mp3"></audio>
+</div>
+<blockquote>
+  <p><b>原稿</b><br>先週、久しぶりに京都へ行ってきました。新幹線が思ったより混んでいて、座れたのは名古屋を過ぎてからでした。宿は川沿いの古い建物で、朝は窓の外の音で自然に目が覚めました。お土産を<b>買いすぎてしまって、帰り</b>の荷物が行きの倍になりました。（129モーラ）</p>
+</blockquote>
+<blockquote>
+  <p><b>1.5倍のほうを書き起こしたもの</b><br>先週、久しぶりに京都へ行ってきました。新幹線が思ったより混んでいて、座れたのは名古屋を過ぎてからでした。宿は川沿いの古い手もので、朝は窓の外の音で自然に目が覚めました。お土産を、お見えの荷物が行きの場合になりました。</p>
+</blockquote>
+<p>22.68秒の原稿が15.12秒に縮みました。長さは指定した1.50倍のとおりです。ただ、最後の文の「買いすぎてしまって、帰り」が読まれていません。前後の語ははっきり聞こえます。「お土産を」のあと「の荷物が行きの倍に」へ直接繋がり、あいだの11文字が消えています。</p>
+<h2>検証したパターン</h2>
+<p>irodoriTTSが早口でも安定させられるのでしょうか？4種類の方法で検証しました。</p>
+<h3>倍率をさらに下げる</h3>
+<p><b>duration_scale</b> は連続値なので、0.8（1.25倍）から0.55（1.8倍）まで刻みました。どのあたりの倍率から語句が読まれなくなるのかを測ります。</p>
+<h3>テキストに絵文字タグを入れる</h3>
+<p>Irodori-TTS は、テキストに混ぜた絵文字で話し方を指定できます。囁き、ため息、笑いといった指定が用意されていて、その中に ⏩ があります。公式の入力画面では、この絵文字に「早口」「一気に、急いで」というラベルが付いています（<a href="https://github.com/Aratako/Irodori-TTS/blob/main/irodori_tts/gradio_emoji_palette.py#L79">gradio_emoji_palette.py</a>）。速さが変わるとは書かれていませんが、ラベルどおりなら一文字置くだけで済むので、試してみました。</p>
+<h3>参照音声を速くする</h3>
+<p>このモデルは、真似てほしい声を参照音声として受け取ります。参照音声のほうをあらかじめ1.5倍速に加工しておけば、参照音声の話し方は出力にも伝わり、出力も速く喋るのではないかと考えました。加工には声の高さを保つ時間伸縮を使います。</p>
+<h3>文を区切って合成する</h3>
+<p>1章で語句が消えたのは長い文でした。短い文では起きていません。それなら、文末（。？！）で原稿を区切って短い塊にしてから1つずつ合成し、あいだに無音を挟んで繋げば、塊ごとには短い文と同じ条件になります。今回は1塊が25モーラを超えないようにしました。<b>モーラ</b>は日本語の音の長さの単位で、「きょ・う・と」なら3モーラです（拗音は前の字と合わせて1つ）。25モーラは、このくらいの長さになります。</p>
+<blockquote>
+  <p>もう少し日程に余裕を持たせたいと思います。（25モーラ）</p>
+</blockquote>
+<p>1塊が25モーラに収まらないときは、読点でも区切ります。</p>
+<h3>測り方</h3>
+<p>できた音声が元の原稿とどれだけ文字が食い違うかを見ます。集計したのは<b>文字誤り率</b>（CER）で、0に近いほど原稿どおりに読めています。</p>
+<p>語句が消えるかどうかは毎回同じではないので、同じ条件を3回ずつ、乱数の種を変えて生成しました。原稿は21モーラ（約4秒）から261モーラ（約53秒）まで、長さを変えたものを用意しています。一番短い21モーラは、1文だけの短いものです。</p>
+<blockquote>
+  <p>先週、久しぶりに京都へ行ってきました。（21モーラ）</p>
+</blockquote>
+<p>以下に出す数字は、<b>短い原稿6本 × 乱数の種3つ = 18サンプルの平均</b>です。長い原稿については、3本 × 種3つ = 9サンプルで見ています。</p>
+<p>声には、商用利用と音声合成への利用が認められている<a href="https://tyc.rei-yumesaki.net/material/corpus/">つくよみちゃんコーパス</a>を使いました。</p>
+<h2>結果</h2>
+<h3>1.67倍から誤りが増える</h3>
+<p>短い文（21〜44モーラ）で５種類の倍率でテストしました。小さい灰色の点が18サンプルそれぞれ、橙の線がその平均です。</p>
+<img src="img01.png" alt="">
+<p class="cap">点が下（0付近）に集まっているほど、原稿どおりに読めています。</p>
+<p>通常の速さでは、18サンプルすべてが誤り0でした。1.25倍と1.5倍も0.004で、ほとんどの点が0に貼りついたままです。1.67倍で0.053、1.82倍で0.140まで上がります。1.5倍までは通常と変わらず、1.67倍を境に誤りが増えます。</p>
+<div class="au">
+  <div class="t">♪ 1.8倍</div>
+  <audio controls preload="none" src="audio/008_short_x18.mp3"></audio>
+</div>
+<blockquote>
+  <p><b>原稿</b><br>新幹線が混んでいて、座れたのは名古屋を過ぎてからでした。（30モーラ）</p>
+</blockquote>
+<p>ここまで来ると、消えるというより全体が不明瞭になります。</p>
+<h3>文が長いほど崩れやすい</h3>
+<p>同じ1.5倍でも、原稿の長さによって結果が変わります。</p>
+<img src="img02.png" alt="">
+<img src="img03.png" alt="">
+<p class="cap">原稿1本ごとの値です。このモデルは1秒あたり約4.9モーラで喋るので、100モーラはおよそ20秒にあたります。</p>
+<p>通常の速さは、どの長さでも誤り0でした。80モーラまでは1.5倍にしても1つを除いて0のままです。98モーラで誤り率は0.017、129モーラで誤り率0.120まで上がります。</p>
+<p>誤りが出はじめる98モーラは、5文をまとめたくらいの長さです。</p>
+<blockquote>
+  <p>先週、久しぶりに京都へ行ってきました。二泊三日の、ゆっくりした旅行になりました。新幹線が思ったより混んでいました。座れたのは名古屋を過ぎてからです。宿は川沿いの古い建物でした。（98モーラ）</p>
+</blockquote>
+<h3>絵文字タグと参照音声の加工では速さが変わらない</h3>
+<img src="img04.png" alt="">
+<p>⏩ を置いても速さが変わりませんでした。発話の長さを予測する部分のコードを読むと、絵文字については<a href="https://github.com/Aratako/Irodori-TTS/blob/main/irodori_tts/duration.py#L101-L102">個数を数えているだけ</a>で、どの絵文字が入っているかは区別していません。⏩ も 🐢（ゆっくり）も、長さの予測に対しては同じ入力になります。話し方のほうには効いているかもしれませんが、速さの指定としては使えません。</p>
+<p>参照音声を1.5倍速にする方法だと、たしかに読む速さは速いですが、文と文の間の間が長くなるため尺としてはそこまで差が産まれません。そのうえ誤り率が0.097まで上がっています。参照音声を時間伸縮したときの歪みが、真似る対象の声質ごと持ち込まれたのだと思われます。速くならずに声だけ荒れました。</p>
+<div class="au">
+  <div class="t">♪ ⏩ を頭に置く</div>
+  <audio controls preload="none" src="audio/009_short_tag.mp3"></audio>
+</div>
+<div class="au">
+  <div class="t">♪ 参照音声を加工</div>
+  <audio controls preload="none" src="audio/010_short_ref.mp3"></audio>
+</div>
+<blockquote>
+  <p><b>原稿</b><br>新幹線が混んでいて、座れたのは名古屋を過ぎてからでした。（30モーラ）</p>
+</blockquote>
+<p>どちらも通常の速さ（5.52秒）とほとんど変わりません。</p>
+<h3>文を区切ると1.5倍でも語句が消えない（成功）</h3>
+<img src="img05.png" alt="">
+<p>1章で語句が消えていた原稿が、区切って合成すると0.003まで戻ります。通常の速さで合成したときと変わりません。</p>
+<div class="au">
+  <div class="t">♪ まとめて1回・1.5倍</div>
+  <audio controls preload="none" src="audio/004_long_x15.mp3"></audio>
+</div>
+<div class="au">
+  <div class="t">♪ 区切って合成・1.5倍</div>
+  <audio controls preload="none" src="audio/005_long_split_x15.mp3"></audio>
+</div>
+<blockquote>
+  <p><b>原稿</b><br>先週、久しぶりに京都へ行ってきました。新幹線が思ったより混んでいて、座れたのは名古屋を過ぎてからでした。宿は川沿いの古い建物で、朝は窓の外の音で自然に目が覚めました。お土産を買いすぎてしまって、帰りの荷物が行きの倍になりました。（129モーラ）</p>
+</blockquote>
+<p>区切ったほうが3.8秒長いのは、塊のあいだに無音を挟んでいるためです。喋っている部分の速さは変わりません。</p>
+<p>表の一番下、261モーラの行が「合成できない」となっているのは、このモデルの出力が30秒までと決まっているためです。53秒ぶんの原稿をまとめて渡すと、30秒で打ち切られて後半が入りません。区切って合成すれば、この上限も関係なくなります。</p>
+<div class="au">
+  <div class="t">♪ 通常の速さ</div>
+  <audio controls preload="none" src="audio/006_verylong_split_base.mp3"></audio>
+</div>
+<div class="au">
+  <div class="t">♪ 1.5倍</div>
+  <audio controls preload="none" src="audio/007_verylong_split_x15.mp3"></audio>
+</div>
+<blockquote>
+  <p><b>原稿</b><br>先週、久しぶりに京都へ行ってきました。新幹線が思ったより混んでいて、座れたのは名古屋を過ぎてからでした。宿は川沿いの古い建物で、朝は窓の外の音で自然に目が覚めました。お土産を買いすぎてしまって、帰りの荷物が行きの倍になりました。二日目は少し足を延ばして、宇治のあたりまで歩いてみました。川沿いの道が思っていたより長くて、途中で何度も休みました。最終日は雨に降られて、駅の喫茶店で時間をつぶしていました。次に行くときは、もう少し日程に余裕を持たせたいと思います。（261モーラ）</p>
+</blockquote>
+<p>15の塊に分けて合成したものです。どちらも最後まで読まれています。</p>
+<h2>まとめ</h2>
+<p>4種類のうち、うまくいったのは<b>長い文を短く区切って合成する方法</b>だけでした。絵文字タグと参照音声の加工では速さが変わらず、倍率だけで1.5倍にすると長い原稿で語句が消えます。区切って合成すれば、53秒の原稿でも1.5倍で最後まで読まれました。</p>
+<img src="img06.png" alt="">
+<p>切り替わるのは80モーラ（約16秒）と98モーラ（約20秒）のあいだです。16秒までなら1.5倍をそのまま使い、20秒を超えるなら区切る、と考えておけば足ります。1.25倍であれば、26秒の原稿まで区切らずに通せました。</p>
+<p>区切るときは、文末（。？！）で切って1塊を25モーラ以下にします。40モーラまで許すと、3回に1回くらいの割合で語句が消えました。</p>
+<p>なお、長い原稿を区切って合成するという回避策は、このモデルに限った話ではありません。Microsoft の VibeVoice も、公式ドキュメントで「速すぎる場合は同じ話者ラベルのまま複数ターンに分割する」ことを案内しています（<a href="https://github.com/microsoft/VibeVoice/blob/main/docs/vibevoice-tts.md">vibevoice-tts.md</a>）。</p>
+<p>音声合成には、フリー素材キャラクター「つくよみちゃん」が無料公開している音声データを使用しています。<br>■つくよみちゃんコーパス（CV.夢前黎）<br><a href="https://tyc.rei-yumesaki.net/material/corpus/">https://tyc.rei-yumesaki.net/material/corpus/</a></p>
+</div>
+</body>
+</html>
